@@ -28,8 +28,8 @@ def Home():
         f"/api/v1.0/precipitation<br>"
        f"/api/v1.0/stations<br>"
         f"/api/v1.0/tobs<br>"
-         f"/api/v1.0/temps/&lt;start&gt;<br>"
-        f"/api/v1.0/temps/&lt;start&gt;/&lt;end&gt;<br>" 
+         f"/api/v1.0/temp/&lt;start&gt;<br>"
+        f"/api/v1.0/temp/&lt;start&gt;/&lt;end&gt;<br>" 
     )
     return (routes)
 
@@ -77,22 +77,31 @@ def tobs():
 
     return jsonify(temp_Observe)
 
-@app.route('/api/v1.0/temps/<start>')
-@app.route('/api/v1.0/temps/<start>/<end>')
-def Temps(start=None, end=None):
+@app.route("/api/v1.0/temp/<start>")
+@app.route("/api/v1.0/temp/<start>/<end>")
+def stats(start=None, end=None):
     session = Session(engine)
 
-    if end==None:
-        startEnd=Session.query(*dataTemp).filter(Measurement.date >= start)
-
-    dataTemp=[func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)]
-    startDate=Session.query(*dataTemp).filter(Measurement.date >= start).all()
-    startEnd=Session.query(*dataTemp).filter(Measurement.date >= start).filter(Measurement.date <= end).all() 
-
+    """Return TMIN, TAVG, TMAX."""
+    # Select statement
+    sel = [func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
+    if not end:   
+        start = dt.datetime.strptime(start, "%m%d%Y")
+        results = session.query(*sel).\
+            filter(Measurement.date >= start).all()
+        session.close()
+        temps = list(np.ravel(results))
+        return jsonify(temps)
+    # calculate TMIN, TAVG, TMAX with start and stop
+    start = dt.datetime.strptime(start, "%m%d%Y")
+    end = dt.datetime.strptime(end, "%m%d%Y")
+    results = session.query(*sel).\
+        filter(Measurement.date >= start).\
+        filter(Measurement.date <= end).all()
     session.close()
-    
-
-    return jsonify()
+    # Unravel results into a 1D array and convert to a list
+    temps = list(np.ravel(results))
+    return jsonify(temps=temps)
 
 
 if __name__ == '__main__':
