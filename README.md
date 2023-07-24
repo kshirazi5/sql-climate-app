@@ -1,4 +1,4 @@
-# sqlalchemy-challenge
+# sql-climate-app
 
 Congratulations! You have decided to treat yourself to a long holiday vacation in Honolulu, Hawaii. To help with your trip planning, you have decided to do a climate analysis about the area. 
 
